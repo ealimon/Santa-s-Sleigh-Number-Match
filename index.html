@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santa's Sleigh Number Match</title>
+    <style>
+        /* --- CORE CSS STYLING (Christmas Theme) --- */
+        body {
+            font-family: 'Arial', sans-serif; 
+            margin: 0;
+            background-color: #f0f8ff; /* Light Blue/Snow */
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23f0f8ff"/><circle cx="10" cy="10" r="1" fill="%23ffffff"/><circle cx="30" cy="40" r="1.5" fill="%23ffffff"/><circle cx="60" cy="70" r="1" fill="%23ffffff"/><circle cx="90" cy="20" r="2" fill="%23ffffff"/></svg>'); /* Simple Snow Pattern */
+        }
+
+        h1 {
+            color: #dc143c; /* Crimson Red */
+            text-align: center;
+            text-shadow: 2px 2px 0 #fff;
+            font-size: 2.5em;
+        }
+
+        #game-container {
+            max-width: 1200px;
+            width: 100%;
+            padding: 25px;
+            background-color: #ffffff;
+            border-radius: 25px; 
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3); 
+            border: 6px solid #006400; /* Dark Green Border */
+        }
+
+        /* TARGET AREA (Chimneys) - Numerals */
+        #target-area {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #dc143c; /* Red Separator */
+            padding-bottom: 20px;
+        }
+
+        .match-target {
+            width: 180px;
+            padding: 15px 10px;
+            background-color: #a52a2a; /* Brown/Brick Color */
+            border: 5px solid #8b0000; /* Dark Red Trim */
+            border-radius: 10px;
+            text-align: center;
+            min-height: 250px;
+            transition: background-color 0.3s, transform 0.1s;
+            position: relative; /* For the numeral overlay */
+        }
+
+        .match-target.drag-over {
+            background-color: #ffd700; /* Gold highlight */
+            border-color: #dc143c;
+            transform: scale(1.02);
+        }
+
+        .target-numeral {
+            font-size: 3em;
+            font-weight: bold;
+            color: #fff; /* White number for contrast */
+            margin-bottom: 15px;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        /* DRAGGABLE CARDS (Gifts and Cookies) */
+        #draggable-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px 0;
+            min-height: 200px;
+        }
+
+        .draggable-card {
+            cursor: grab;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
+            transition: opacity 0.3s, transform 0.1s;
+            font-size: 1.4em;
+            font-weight: bold;
+            width: 150px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            overflow: hidden; 
+        }
+        
+        /* Word Cards - Gifts */
+        .card-word {
+            background-color: #dc143c; /* Red Gift */
+            color: #fff;
+            border: 4px solid #ffd700; /* Gold Ribbon */
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        /* 10-Frame Cards - Cookies */
+        .card-ten-frame {
+            background-color: #fffacd; /* Lemon Chiffon/Cookie Dough */
+            color: #a52a2a; /* Brown Text */
+            border: 4px dashed #006400; /* Green Frosting border */
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        /* 10-FRAME VISUALIZATION CONTAINER */
+        .ten-frame-container {
+            display: flex;
+            gap: 5px; 
+            align-items: center;
+            justify-content: center; 
+            margin: auto; 
+            padding: 5px 0;
+        }
+
+        .ten-frame-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 3px;
+            width: 65px;
+            height: 30px;
+            background-color: rgba(255, 255, 255, 0.5); 
+            border-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        /* DOTS - Chocolate Chips/Sprinkles */
+        .dot {
+            width: 6px; 
+            height: 6px; 
+            background-color: #f5f5dc; /* Off-white placeholder */
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+
+        .dot.filled {
+            background-color: #8b4513; /* Chocolate Chip Brown */
+            border: 1px solid #fff;
+        }
+
+        /* Matched Card Styling */
+        .match-card {
+            border: 2px solid #006400; 
+            background-color: #e6ffe6; /* Light Green */
+            color: #333;
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+        
+        .match-card .draggable-card {
+            background-color: transparent;
+            color: #333;
+            box-shadow: none;
+            border: none;
+            padding: 0;
+            font-weight: normal;
+        }
+        
+        /* Matched dots should use a vibrant green */
+        .match-card .ten-frame-grid .dot.filled {
+            background-color: #228b22; /* Forest Green */
+            border-color: #fff;
+        }
+
+        .match-target.complete {
+            background-color: #3cb371; /* Medium Sea Green */
+            border: 6px solid #ffd700; /* Gold */
+            animation: pulse 1s infinite alternate;
+        }
+
+        #feedback {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #dc143c; 
+        }
+
+        /* --- CONGRATULATIONS OVERLAY --- */
+        #congrats-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); 
+            color: white;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #congrats-box {
+            background: linear-gradient(135deg, #dc143c, #006400, #ffd700); 
+            padding: 60px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9);
+            animation: bounce 0.8s ease-out;
+            border: 10px dashed #fff;
+        }
+
+        #congrats-title {
+            font-size: 4.8em;
+            margin-bottom: 10px;
+            text-shadow: 4px 4px 0 #a52a2a; 
+        }
+
+        #congrats-message {
+            font-size: 1.8em;
+            margin-bottom: 30px;
+        }
+
+        #next-set-button {
+            padding: 18px 35px;
+            font-size: 1.5em;
+            font-weight: bold;
+            background-color: #ffd700; /* Gold Button */
+            color: #dc143c; /* Red Text */
+            border: 5px solid #fff;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        #next-set-button:hover {
+            background-color: #ffc700;
+            transform: scale(1.05);
+        }
+
+        /* Animations */
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-30px);}
+            60% {transform: translateY(-15px);}
+        }
+        @keyframes pulse {
+            0% {box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);}
+            100% {box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);}
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>🎅 Santa's Sleigh Number Match (Set <span id="current-set-display">1</span> of 4) 🦌</h1>
+        <p style="text-align: center; font-size: 1.2em; color: #006400;">Help Santa! Match the **Gifts (Number Words)** and **Cookies (Ten Frames)** to the right **Chimney**.</p>
+
+        <div id="target-area">
+            </div>
+
+        <div id="draggable-area">
+            </div>
+        
+        <div id="feedback"></div>
+    </div>
+
+    <div id="congrats-overlay">
+        <div id="congrats-box">
+            <div id="congrats-title">🎄 Ho Ho Ho! Success! 🎁</div>
+            <div id="congrats-message">You completed Set <span id="completed-set-number">1</span>! Ready to load the next batch of presents?</div>
+            <button id="next-set-button">Start Set <span id="next-set-number">2</span></button>
+        </div>
+    </div>
+
+    <script>
+        // --- JAVASCRIPT LOGIC ---
+        
+        // **TTS FUNCTIONALITY**
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); 
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.8; 
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // 1. DATA DEFINITION - (1-20)
+        const ALL_NUMBERS = [
+            // Set 1: 1-5
+            [{ num: 1, word: "One" }, { num: 2, word: "Two" }, { num: 3, word: "Three" }, { num: 4, word: "Four" }, { num: 5, word: "Five" }],
+            // Set 2: 6-10
+            [{ num: 6, word: "Six" }, { num: 7, word: "Seven" }, { num: 8, word: "Eight" }, { num: 9, word: "Nine" }, { num: 10, word: "Ten" }],
+            // Set 3: 11-15
+            [{ num: 11, word: "Eleven" }, { num: 12, word: "Twelve" }, { num: 13, word: "Thirteen" }, { num: 14, word: "Fourteen" }, { num: 15, word: "Fifteen" }],
+            // Set 4: 16-20
+            [{ num: 16, word: "Sixteen" }, { num: 17, word: "Seventeen" }, { num: 18, word: "Eighteen" }, { num: 19, word: "Nineteen" }, { num: 20, word: "Twenty" }]
+        ];
+
+        // Global State
+        let currentSetIndex = 0; 
+        let matchesFoundInSet = 0;
+        let cardCounter = 0; 
+        const totalSets = ALL_NUMBERS.length;
+        
+        const targetArea = document.getElementById('target-area');
+        const draggableArea = document.getElementById('draggable-area');
+        const congratsOverlay = document.getElementById('congrats-overlay');
+        const nextSetButton = document.getElementById('next-set-button');
+        const currentSetDisplay = document.getElementById('current-set-display');
+        const completedSetNumber = document.getElementById('completed-set-number');
+        const nextSetNumber = document.getElementById('next-set-number');
+
+
+        // 2. HELPER FUNCTION: Create 10-Frame HTML
+        function createTenFrameHTML(number) {
+            const fullTens = Math.floor(number / 10);
+            const ones = number % 10;
+            let html = '';
+
+            function generateSingleFrame(filledCount) {
+                let dotsHTML = '';
+                for (let i = 1; i <= 10; i++) {
+                    const isFilled = i <= filledCount;
+                    dotsHTML += `<span class="dot ${isFilled ? 'filled' : ''}"></span>`;
+                }
+                return `<div class="ten-frame-grid">${dotsHTML}</div>`;
+            }
+            
+            for (let i = 0; i < fullTens; i++) {
+                html += generateSingleFrame(10);
+            }
+            
+            if (ones > 0) { 
+                html += generateSingleFrame(ones);
+            }
+            
+            // Ensures the second, empty frame shows for 10
+            if (number === 10) {
+                html += generateSingleFrame(0);
+            }
+
+            return `<div class="ten-frame-container">${html}</div>`; 
+        }
+
+        // Simple Fisher-Yates shuffle algorithm
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // 3. GAME SETUP
+        function setupGame(setIndex) {
+            const currentSetData = ALL_NUMBERS[setIndex];
+            matchesFoundInSet = 0;
+
+            // Clear previous elements
+            targetArea.innerHTML = '';
+            draggableArea.innerHTML = '';
+            updateFeedback('');
+            
+            currentSetDisplay.textContent = setIndex + 1; 
+
+            const allDraggables = [];
+
+            // A. Create TARGETS (Numerals in Chimneys)
+            currentSetData.forEach(data => {
+                const target = document.createElement('div');
+                target.className = 'match-target';
+                target.setAttribute('data-number', data.num);
+                target.setAttribute('data-matches-needed', 2); 
+                target.innerHTML = `<div class="target-numeral">${data.num}</div>`;
+
+                target.addEventListener('dragover', handleDragOver);
+                target.addEventListener('dragleave', handleDragLeave);
+                target.addEventListener('drop', handleDrop);
+
+                targetArea.appendChild(target);
+
+                // B. Prepare DRAGGABLES (Gifts/Words and Cookies/10-Frames)
+                allDraggables.push({ type: 'gift', num: data.num, html: data.word, class: 'card-word' });
+                allDraggables.push({ type: 'cookie', num: data.num, html: createTenFrameHTML(data.num), class: 'card-ten-frame' });
+            });
+
+            // C. Shuffle and Render Draggables
+            shuffleArray(allDraggables);
+            
+            allDraggables.forEach(item => {
+                cardCounter++;
+                const card = document.createElement('div');
+                card.id = `card-${cardCounter}`; 
+                card.className = `draggable-card ${item.class}`;
+                card.setAttribute('data-number', item.num);
+                card.setAttribute('data-type', item.type);
+                card.setAttribute('draggable', true);
+                card.innerHTML = item.html;
+
+                card.addEventListener('dragstart', handleDragStart);
+                
+                // TTS: SPEAK NUMBER ON HOVER
+                card.addEventListener('mouseenter', () => speak(item.num.toString()));
+
+                draggableArea.appendChild(card);
+            });
+        }
+
+
+        // 4. DRAG AND DROP HANDLERS
+
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.outerHTML);
+            e.dataTransfer.setData('data-number', e.target.getAttribute('data-number'));
+            e.dataTransfer.setData('data-type', e.target.getAttribute('data-type'));
+            e.dataTransfer.setData('card-id', e.target.id); 
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); 
+            const target = e.target.closest('.match-target');
+            if (target) {
+                target.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            const target = e.target.closest('.match-target');
+            if (target) {
+                target.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const target = e.target.closest('.match-target');
+            if (!target) return;
+
+            target.classList.remove('drag-over');
+            
+            const droppedNumber = e.dataTransfer.getData('data-number');
+            const targetNumber = target.getAttribute('data-number');
+            const droppedType = e.dataTransfer.getData('data-type');
+            const droppedCardId = e.dataTransfer.getData('card-id'); 
+            
+            const alreadyMatched = target.querySelector(`[data-matched-type="${droppedType}"]`);
+            
+            if (droppedNumber === targetNumber && !alreadyMatched) {
+                // SUCCESSFUL MATCH
+                const cardHTML = e.dataTransfer.getData('text/plain');
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = cardHTML;
+                const droppedCard = tempDiv.firstChild;
+                
+                const matchDisplay = document.createElement('div');
+                matchDisplay.className = 'match-card';
+                matchDisplay.setAttribute('data-matched-type', droppedType);
+                
+                droppedCard.removeAttribute('draggable');
+                droppedCard.removeAttribute('id');
+                droppedCard.className = droppedCard.className.replace('draggable-card', '').trim();
+
+                matchDisplay.appendChild(droppedCard);
+                target.appendChild(matchDisplay);
+
+                // REMOVE THE ORIGINAL DRAGGABLE CARD
+                const originalDraggable = document.getElementById(droppedCardId);
+                if (originalDraggable) {
+                    originalDraggable.remove(); 
+                }
+
+                // Update matches needed count
+                let matchesNeeded = parseInt(target.getAttribute('data-matches-needed'));
+                matchesNeeded--;
+                target.setAttribute('data-matches-needed', matchesNeeded);
+
+                if (matchesNeeded === 0) {
+                    target.classList.add('complete');
+                    matchesFoundInSet++;
+                    updateFeedback(`🥳 Chimney ${targetNumber} is ready for Santa!`);
+                    speak(`${targetNumber}. All matched!`); 
+                    checkSetCompletion();
+                } else {
+                    updateFeedback(`✅ Matched the ${droppedType} for ${targetNumber}! One more to go!`);
+                    speak(`${targetNumber}. Found the ${droppedType}!`); 
+                }
+
+            } else if (alreadyMatched) {
+                updateFeedback(`⚠️ The ${droppedType} for this number is already matched! Try the other card type.`);
+                speak("Already matched! Try the other card type.");
+            } else {
+                updateFeedback('❌ Incorrect match. That gift/cookie is for a different chimney.');
+                speak("Incorrect. Try again.");
+            }
+        }
+
+        // 5. GAME FLOW AND FEEDBACK
+
+        function updateFeedback(message) {
+            const feedbackElement = document.getElementById('feedback');
+            feedbackElement.textContent = message;
+        }
+
+        function checkSetCompletion() {
+            const requiredMatches = ALL_NUMBERS[currentSetIndex].length;
+            
+            if (matchesFoundInSet === requiredMatches) {
+                
+                completedSetNumber.textContent = currentSetIndex + 1;
+                
+                if (currentSetIndex < totalSets - 1) {
+                    nextSetButton.style.display = 'block';
+                    nextSetNumber.textContent = currentSetIndex + 2;
+                    congratsOverlay.style.display = 'flex';
+                    document.getElementById('congrats-message').textContent = `All the presents are ready to go down the chimneys in Set ${currentSetIndex + 1}! Ready for the next set?`;
+                    speak(`Great job! Set ${currentSetIndex + 1} complete. Ready for set ${currentSetIndex + 2}?`);
+                } else {
+                    nextSetButton.style.display = 'none';
+                    congratsOverlay.style.display = 'flex';
+                    document.getElementById('congrats-title').textContent = '🌟 SANTA\'S HELPER MASTER! 🌟';
+                    document.getElementById('congrats-message').textContent = 'You successfully matched all the numbers 1 through 20! Merry Christmas!';
+                    speak("Congratulations! You mastered numbers 1 to 20! Merry Christmas!");
+                }
+            }
+        }
+
+        function moveToNextSet() {
+            currentSetIndex++;
+            if (currentSetIndex < totalSets) {
+                congratsOverlay.style.display = 'none';
+                setupGame(currentSetIndex);
+            }
+        }
+        
+        nextSetButton.addEventListener('click', moveToNextSet);
+
+        // Start the game!
+        document.addEventListener('DOMContentLoaded', () => setupGame(currentSetIndex));
+    </script>
+
+</body>
+</html>
