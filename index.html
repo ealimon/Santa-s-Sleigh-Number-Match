@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Santa's Sleigh Number Match (1-10)</title>
+    <title>Santa's Sleigh Number Match (Large Display)</title>
     <style>
         /* --- CORE CSS STYLING --- */
         body {
@@ -43,13 +43,13 @@
         }
 
         .match-target {
-            width: 160px;
+            width: 170px;
             padding: 15px 10px;
             background-color: #a52a2a; 
             border: 5px solid #8b0000; 
             border-radius: 10px;
             text-align: center;
-            min-height: 220px;
+            min-height: 250px;
             transition: transform 0.1s;
         }
 
@@ -59,7 +59,7 @@
         }
 
         .target-numeral {
-            font-size: 3em;
+            font-size: 3.5em;
             font-weight: bold;
             color: #fff;
             margin-bottom: 15px;
@@ -69,8 +69,8 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 15px;
-            min-height: 180px;
+            gap: 20px;
+            min-height: 200px;
         }
 
         .draggable-card {
@@ -78,14 +78,15 @@
             padding: 10px;
             border-radius: 15px;
             box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.2);
-            font-size: 1.3em;
+            font-size: 1.5em;
             font-weight: bold;
-            width: 130px;
-            height: 130px;
+            width: 150px;
+            height: 150px;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
+            box-sizing: border-box;
         }
         
         .card-word {
@@ -99,26 +100,55 @@
             border: 3px dashed #006400; 
         }
 
-        /* 10-FRAME DOT STYLING */
-        .ten-frame-container { display: flex; gap: 4px; }
+        /* --- ENLARGED 10-FRAME DOT STYLING --- */
+        .ten-frame-container { 
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+        }
         .ten-frame-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(2, 1fr);
-            gap: 2px;
-            width: 60px; height: 28px;
-            background: rgba(255,255,255,0.5);
+            gap: 6px; /* Increased gap */
+            width: 110px; /* Increased total width */
+            height: 50px; /* Increased total height */
+            background: rgba(255,255,255,0.7);
+            border: 2px solid #ccc;
+            padding: 4px;
+            border-radius: 5px;
+        }
+        .dot { 
+            width: 14px; /* Much larger dots */
+            height: 14px; 
+            background: #eee; 
+            border-radius: 50%; 
             border: 1px solid #ccc;
         }
-        .dot { width: 6px; height: 6px; background: #eee; border-radius: 50%; }
-        .dot.filled { background: #8b4513; }
+        .dot.filled { 
+            background: #8b4513; /* Chocolate chip */
+            border-color: #5d2e0d;
+        }
 
         .match-card {
             background: #e6ffe6;
-            margin: 4px 0;
-            padding: 4px;
+            margin: 6px 0;
+            padding: 6px;
             border-radius: 5px;
             border: 1px solid #006400;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Adjusting matched 10-frame size so it fits in chimney */
+        .match-card .ten-frame-grid {
+            width: 80px; 
+            height: 35px;
+            gap: 3px;
+        }
+        .match-card .dot {
+            width: 10px;
+            height: 10px;
         }
 
         #feedback { text-align: center; margin-top: 15px; font-weight: bold; font-size: 1.3em; color: #dc143c; }
@@ -146,12 +176,11 @@
         <div id="congrats-box">
             <h2 id="congrats-title">🎄 Great Job! 🎁</h2>
             <p id="congrats-message"></p>
-            <button id="next-set-button" style="padding: 10px 20px; font-size: 1.2em; cursor: pointer;">Next Set</button>
+            <button id="next-set-button" style="padding: 10px 20px; font-size: 1.2em; cursor: pointer; border-radius: 10px;">Next Set</button>
         </div>
     </div>
 
     <script>
-        // 1. DATA DEFINITION - TWO SETS OF FIVE
         const ALL_NUMBERS = [
             [{ num: 1, word: "One" }, { num: 2, word: "Two" }, { num: 3, word: "Three" }, { num: 4, word: "Four" }, { num: 5, word: "Five" }],
             [{ num: 6, word: "Six" }, { num: 7, word: "Seven" }, { num: 8, word: "Eight" }, { num: 9, word: "Nine" }, { num: 10, word: "Ten" }]
@@ -184,7 +213,6 @@
             const allDraggables = [];
 
             currentSetData.forEach(data => {
-                // Targets
                 const target = document.createElement('div');
                 target.className = 'match-target';
                 target.setAttribute('data-number', data.num);
@@ -193,7 +221,6 @@
                 target.addEventListener('drop', handleDrop);
                 targetArea.appendChild(target);
 
-                // Draggables
                 allDraggables.push({ type: 'gift', num: data.num, html: data.word, class: 'card-word' });
                 allDraggables.push({ type: 'cookie', num: data.num, html: createTenFrameHTML(data.num), class: 'card-ten-frame' });
             });
@@ -232,7 +259,7 @@
                 
                 checkChimneyComplete(target);
             } else {
-                document.getElementById('feedback').textContent = "❌ Try a different chimney!";
+                document.getElementById('feedback').textContent = "❌ Not that one! Try again.";
                 card.id = '';
             }
         }
@@ -241,6 +268,7 @@
             const matches = target.querySelectorAll('.match-card').length;
             if (matches === 2) {
                 target.style.background = "#3cb371";
+                target.style.borderColor = "#ffd700";
                 matchesFoundInSet++;
                 if (matchesFoundInSet === 5) showCongrats();
             }
@@ -249,10 +277,10 @@
         function showCongrats() {
             congratsOverlay.style.display = 'flex';
             if (currentSetIndex === 0) {
-                document.getElementById('congrats-message').textContent = "Set 1 Complete! Ready for 6-10?";
+                document.getElementById('congrats-message').textContent = "Set 1 is ready! On to numbers 6-10?";
                 nextSetButton.style.display = 'inline-block';
             } else {
-                document.getElementById('congrats-message').textContent = "You finished all sets! Happy Holidays!";
+                document.getElementById('congrats-message').textContent = "Santa is ready for takeoff! Merry Christmas!";
                 nextSetButton.style.display = 'none';
             }
         }
